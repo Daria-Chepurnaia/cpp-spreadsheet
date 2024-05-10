@@ -2,10 +2,13 @@
 
 #include "FormulaLexer.h"
 #include "common.h"
+#include "cell.h"
+
 
 #include <forward_list>
 #include <functional>
 #include <stdexcept>
+#include <functional>
 
 namespace ASTImpl {
 class Expr;
@@ -23,17 +26,26 @@ public:
     FormulaAST& operator=(FormulaAST&&) = default;
     ~FormulaAST();
 
-    double Execute(/*добавьте нужные аргументы*/ args) const;
+    double Execute(const SheetInterface* sheet) const;
     void PrintCells(std::ostream& out) const;
     void Print(std::ostream& out) const;
     void PrintFormula(std::ostream& out) const;
 
-    std::forward_list<Position>& GetCells() {
-        return cells_;
+    std::vector<Position>& GetCells() {
+        if (unique_sorted_cells_.empty()) {
+            std::set<Position> result(cells_.begin(), cells_.end());        
+            unique_sorted_cells_ = {result.begin(), result.end()};
+        }
+        
+        return unique_sorted_cells_;
     }
 
-    const std::forward_list<Position>& GetCells() const {
-        return cells_;
+    const std::vector<Position>& GetCells() const {
+        if (unique_sorted_cells_.empty()) {
+            std::set<Position> result(cells_.begin(), cells_.end());        
+            unique_sorted_cells_ = {result.begin(), result.end()};
+        }        
+        return unique_sorted_cells_;
     }
 
 private:
@@ -43,6 +55,7 @@ private:
     // efficiently traversed without going through
     // the whole AST
     std::forward_list<Position> cells_;
+    mutable std::vector<Position> unique_sorted_cells_;
 };
 
 FormulaAST ParseFormulaAST(std::istream& in);

@@ -1,3 +1,5 @@
+#include <limits>
+
 #include "common.h"
 #include "formula.h"
 #include "test_runner_p.h"
@@ -24,9 +26,6 @@ inline std::ostream& operator<<(std::ostream& output, const CellInterface::Value
 }
 
 namespace {
-std::string ToString(FormulaError::Category category) {
-    return std::string(FormulaError(category).ToString());
-}
 
 void TestPositionAndStringConversion() {
     auto testSingle = [](Position pos, std::string_view str) {
@@ -155,15 +154,24 @@ void TestFormulaReferences() {
     };
 
     sheet->SetCell("A1"_pos, "1");
+    
     ASSERT_EQUAL(evaluate("A1"), 1);
+    
+    
     sheet->SetCell("A2"_pos, "2");
     ASSERT_EQUAL(evaluate("A1+A2"), 3);
+    
+    
 
     // Тест на нули:
     sheet->SetCell("B3"_pos, "");
+    
     ASSERT_EQUAL(evaluate("A1+B3"), 1);  // Ячейка с пустым текстом
+    
     ASSERT_EQUAL(evaluate("A1+B1"), 1);  // Пустая ячейка
+    
     ASSERT_EQUAL(evaluate("A1+E4"), 1);  // Ячейка за пределами таблицы
+    
 }
 
 void TestFormulaExpressionFormatting() {
@@ -180,11 +188,12 @@ void TestFormulaExpressionFormatting() {
 }
 
 void TestFormulaReferencedCells() {
+    
     ASSERT(ParseFormula("1")->GetReferencedCells().empty());
-
+    
     auto a1 = ParseFormula("A1");
     ASSERT_EQUAL(a1->GetReferencedCells(), (std::vector{"A1"_pos}));
-
+   
     auto b2c3 = ParseFormula("B2+C3");
     ASSERT_EQUAL(b2c3->GetReferencedCells(), (std::vector{"B2"_pos, "C3"_pos}));
 
@@ -198,36 +207,40 @@ void TestErrorValue() {
     sheet->SetCell("E2"_pos, "A1");
     sheet->SetCell("E4"_pos, "=E2");
     ASSERT_EQUAL(sheet->GetCell("E4"_pos)->GetValue(),
-                 CellInterface::Value(FormulaError::Category::Value));
+                    CellInterface::Value(FormulaError::Category::Value));
 
     sheet->SetCell("E2"_pos, "3D");
     ASSERT_EQUAL(sheet->GetCell("E4"_pos)->GetValue(),
-                 CellInterface::Value(FormulaError::Category::Value));
+                    CellInterface::Value(FormulaError::Category::Value));
 }
 
-void TestErrorDiv0() {
+void TestErrorArithmetic() {
     auto sheet = CreateSheet();
 
     constexpr double max = std::numeric_limits<double>::max();
 
     sheet->SetCell("A1"_pos, "=1/0");
+    
     ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(),
-                 CellInterface::Value(FormulaError::Category::Div0));
+                    CellInterface::Value(FormulaError::Category::Arithmetic));
+     
 
     sheet->SetCell("A1"_pos, "=1e+200/1e-200");
+    
     ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(),
-                 CellInterface::Value(FormulaError::Category::Div0));
-
+                    CellInterface::Value(FormulaError::Category::Arithmetic));
+    
     sheet->SetCell("A1"_pos, "=0/0");
+    
     ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(),
-                 CellInterface::Value(FormulaError::Category::Div0));
-
+                    CellInterface::Value(FormulaError::Category::Arithmetic));
+    
     {
         std::ostringstream formula;
         formula << '=' << max << '+' << max;
         sheet->SetCell("A1"_pos, formula.str());
         ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(),
-                     CellInterface::Value(FormulaError::Category::Div0));
+                        CellInterface::Value(FormulaError::Category::Arithmetic));
     }
 
     {
@@ -235,7 +248,7 @@ void TestErrorDiv0() {
         formula << '=' << -max << '-' << max;
         sheet->SetCell("A1"_pos, formula.str());
         ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(),
-                     CellInterface::Value(FormulaError::Category::Div0));
+                        CellInterface::Value(FormulaError::Category::Arithmetic));
     }
 
     {
@@ -243,14 +256,14 @@ void TestErrorDiv0() {
         formula << '=' << max << '*' << max;
         sheet->SetCell("A1"_pos, formula.str());
         ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(),
-                     CellInterface::Value(FormulaError::Category::Div0));
+                        CellInterface::Value(FormulaError::Category::Arithmetic));
     }
 }
 
 void TestEmptyCellTreatedAsZero() {
     auto sheet = CreateSheet();
     sheet->SetCell("A1"_pos, "=B2");
-    ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(), CellInterface::Value(0));
+    ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(), CellInterface::Value(0.0));
 }
 
 void TestFormulaInvalidPosition() {
@@ -261,16 +274,21 @@ void TestFormulaInvalidPosition() {
             ASSERT(false);
         } catch (const FormulaException&) {
             // we expect this one
-        }
+        } 
     };
 
     try_formula("=X0");
+    
     try_formula("=ABCD1");
     try_formula("=A123456");
     try_formula("=ABCDEFGHIJKLMNOPQRS1234567890");
+    
+    
     try_formula("=XFD16385");
     try_formula("=XFE16384");
+    
     try_formula("=R2D2");
+    
 }
 
 void TestPrint() {
@@ -290,8 +308,10 @@ void TestPrint() {
 }
 
 void TestCellReferences() {
+    
     auto sheet = CreateSheet();
     sheet->SetCell("A1"_pos, "1");
+    
     sheet->SetCell("A2"_pos, "=A1");
     sheet->SetCell("B2"_pos, "=A1");
 
@@ -314,6 +334,7 @@ void TestCellReferences() {
 }
 
 void TestFormulaIncorrect() {
+    
     auto isIncorrect = [](std::string expression) {
         try {
             ParseFormula(std::move(expression));
@@ -322,10 +343,12 @@ void TestFormulaIncorrect() {
         }
         return false;
     };
-
+    
     ASSERT(isIncorrect("A2B"));
+    
     ASSERT(isIncorrect("3X"));
     ASSERT(isIncorrect("A0++"));
+    
     ASSERT(isIncorrect("((1)"));
     ASSERT(isIncorrect("2+4-"));
 }
@@ -345,6 +368,7 @@ void TestCellCircularReferences() {
     }
 
     ASSERT(caught);
+    
     ASSERT_EQUAL(sheet->GetCell("M6"_pos)->GetText(), "Ready");
 }
 }  // namespace
@@ -363,7 +387,7 @@ int main() {
     RUN_TEST(tr, TestFormulaExpressionFormatting);
     RUN_TEST(tr, TestFormulaReferencedCells);
     RUN_TEST(tr, TestErrorValue);
-    RUN_TEST(tr, TestErrorDiv0);
+    RUN_TEST(tr, TestErrorArithmetic);
     RUN_TEST(tr, TestEmptyCellTreatedAsZero);
     RUN_TEST(tr, TestFormulaInvalidPosition);
     RUN_TEST(tr, TestPrint);
