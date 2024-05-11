@@ -11,9 +11,8 @@
 using namespace std::literals;
 using namespace std;
 
-
 void Sheet::SetCell(Position pos, std::string text) {
-    if (!pos.IsValid()) throw InvalidPositionException("invalid position");
+    pos.ThrowIfInvalid();
     int row_number = sheet_.size();
     int col_number = row_number == 0 ? 0 : sheet_.at(0).size();
     
@@ -30,8 +29,8 @@ void Sheet::SetCell(Position pos, std::string text) {
     }
 
     if (sheet_[pos.row][pos.col] == nullptr)  {
-        auto l = [this](Position p) {return GetConcreteCell(p);};
-        sheet_[pos.row][pos.col] = std::make_unique<Cell>(this, l);
+        auto cell_getter = [this](Position p) {return GetConcreteCell(p);};
+        sheet_[pos.row][pos.col] = std::make_unique<Cell>(this, cell_getter);
     }   
     
     sheet_[pos.row][pos.col]->Set(pos, text);    
@@ -44,61 +43,53 @@ void Sheet::SetCell(Position pos, std::string text) {
         column_to_num_of_cells_.resize(pos.col + 1);
     }    
     
-    row_to_num_of_cells_[pos.row] += 1;
-    column_to_num_of_cells_[pos.col] += 1;
+    row_to_num_of_cells_[pos.row]++;
+    column_to_num_of_cells_[pos.col]++;
 
     print_area_.rows = std::max(print_area_.rows, pos.row);
     print_area_.cols = std::max(print_area_.cols, pos.col);     
 }
 
 const CellInterface* Sheet::GetCell(Position pos) const {
-    if (!pos.IsValid()) throw InvalidPositionException("invalid position");
-    if (pos.row > print_area_.rows || pos.col > print_area_.cols) return nullptr;
-    if (sheet_[pos.row][pos.col] == nullptr) {
+    pos.ThrowIfInvalid();
+    if (pos.row > print_area_.rows || pos.col > print_area_.cols || sheet_[pos.row][pos.col] == nullptr) {
         return nullptr;
-    } else {
-        return sheet_[pos.row][pos.col].get();
-    }    
+    }
+    return sheet_[pos.row][pos.col].get();      
 }
 
 CellInterface* Sheet::GetCell(Position pos) {
-    if (!pos.IsValid()) throw InvalidPositionException("invalid position");
-    if (pos.row > print_area_.rows || pos.col > print_area_.cols) return nullptr;
-    if (sheet_[pos.row][pos.col] == nullptr) {
+    pos.ThrowIfInvalid();
+    if (pos.row > print_area_.rows || pos.col > print_area_.cols || sheet_[pos.row][pos.col] == nullptr) {
         return nullptr;
-    } else {
-       return sheet_[pos.row][pos.col].get();
-    }    
+    }     
+    return sheet_[pos.row][pos.col].get();     
 }
 
 const Cell* Sheet::GetConcreteCell(Position pos) const {        
-    if (!pos.IsValid()) throw InvalidPositionException("invalid position");
-    if (pos.row > print_area_.rows || pos.col > print_area_.cols) return nullptr;
-    if (sheet_[pos.row][pos.col] == nullptr) {
+    pos.ThrowIfInvalid();
+    if (pos.row > print_area_.rows || pos.col > print_area_.cols || sheet_[pos.row][pos.col] == nullptr) {
         return nullptr;
-    } else {
-        return sheet_[pos.row][pos.col].get();
-    }   
+    }
+    return sheet_[pos.row][pos.col].get();    
 }
     
 Cell* Sheet::GetConcreteCell(Position pos) {
-    if (!pos.IsValid()) throw InvalidPositionException("invalid position");
-    if (pos.row > print_area_.rows || pos.col > print_area_.cols) return nullptr;
-    if (sheet_[pos.row][pos.col] == nullptr) {
+    pos.ThrowIfInvalid();
+    if (pos.row > print_area_.rows || pos.col > print_area_.cols || sheet_[pos.row][pos.col] == nullptr) {
         return nullptr;
-    } else {
-        return sheet_[pos.row][pos.col].get();
-    }   
+    }
+    return sheet_[pos.row][pos.col].get();      
 }
 
 void Sheet::ClearCell(Position pos) {
-    if (!pos.IsValid()) throw InvalidPositionException("invalid position");
+    pos.ThrowIfInvalid();
     if (pos.row > print_area_.rows || pos.col > print_area_.cols) return;
     if (sheet_[pos.row][pos.col]) {
         sheet_[pos.row][pos.col].reset();            
 
-        row_to_num_of_cells_[pos.row] -= 1;
-        column_to_num_of_cells_[pos.col] -= 1;
+        row_to_num_of_cells_[pos.row]--;
+        column_to_num_of_cells_[pos.col]--;
 
         for (int i = pos.row; i >= 0; --i) {
             if (row_to_num_of_cells_[i] == 0) {

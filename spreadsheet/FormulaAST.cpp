@@ -242,15 +242,18 @@ public:
         return EP_ATOM;
     }
 
-    double Evaluate(const SheetInterface* sheet) const override {        
-        if (!cell_->IsValid()) throw FormulaError(FormulaError::Category::Ref);        
+    double Evaluate(const SheetInterface* sheet) const override {           
+        cell_->ThrowIfInvalid();
         auto cell = sheet->GetCell(*cell_); 
         if (cell == nullptr) return 0;  
         
         auto value = cell->GetValue();
-        if (std::holds_alternative<double>(value)) return std::get<double>(value);
-        if (std::holds_alternative<FormulaError>(value)) throw std::get<FormulaError>(value);
-        
+        if (std::holds_alternative<double>(value)) {
+            return std::get<double>(value);
+        }
+        if (std::holds_alternative<FormulaError>(value)) {
+            throw std::get<FormulaError>(value);
+        }         
         std::string result_str = std::get<std::string>(value);
         if (result_str == "") {
             return 0;

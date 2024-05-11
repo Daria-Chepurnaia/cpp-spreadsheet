@@ -6,6 +6,7 @@
 #include <functional>
 #include <set>
 #include <optional>
+#include <memory>
 
 class Cell : public CellInterface {
 public:
@@ -18,12 +19,13 @@ public:
     Value GetValue() const override;
     std::string GetText() const override;   
     std::vector<Position> GetReferencedCells() const override;  
-    bool HasCircDependenciesFromCell(Position p);
-    bool HasCircDependencies(std::vector<Position> cells);    
+    bool HasCircDependenciesFromCell(Position p) const;
+    bool HasCircDependencies(std::vector<Position> cells) const;    
     void InvalidateCache();
+    void ThrowIfIncorrectFormula (std::unique_ptr<FormulaInterface>& formula) const;    
     
 private:
-    
+    void UpdateDependencies(Position position);
     class Impl {
     public:
         Impl() = default;

@@ -18,7 +18,7 @@ struct Position {
 
     bool IsValid() const;
     std::string ToString() const;
-
+    void ThrowIfInvalid() const;
     static Position FromString(std::string_view str);
 
     static const int MAX_ROWS = 16384;

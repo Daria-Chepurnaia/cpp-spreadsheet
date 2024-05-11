@@ -22,6 +22,12 @@ bool Position::IsValid() const {
     return row >= 0 && col >= 0 && row < MAX_ROWS && col < MAX_COLS;
 }
 
+void Position::ThrowIfInvalid() const {
+    if (!IsValid()) {
+        throw InvalidPositionException("invalid position");
+    }
+}
+
 std::string Position::ToString() const {
     if (!IsValid()) {
         return "";
