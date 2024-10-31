@@ -95,12 +95,12 @@ bool Cell::HasCircDependencies(std::vector<Position> cells) const {
 }
 
 void Cell::ThrowIfIncorrectFormula (std::unique_ptr<FormulaInterface>& formula) const {
-    //если есть зависимости от других ячеек и они циклические, выбросить икслючение
+    //If there are dependencies on other cells and they are cyclic, throw an exception
     if (formula->GetReferencedCells().size() != 0) {        
         if (HasCircDependencies(formula->GetReferencedCells())) {
             throw CircularDependencyException("incorrect formula. Causes circular dependencies");        
         }
-        //проверяем валидность позиций в формуле
+        //check the validity of the positions in the formula
         for (auto position : formula->GetReferencedCells()) {
             if (!position.IsValid()) throw FormulaException("incorrect formula");
         }
@@ -108,15 +108,13 @@ void Cell::ThrowIfIncorrectFormula (std::unique_ptr<FormulaInterface>& formula) 
 }
 
 void Cell::UpdateDependencies(Position position) {
-    //у каждой клетки из списка прямых зависимостей удаляем текущую из списка обратных зависимостей
     for (auto pos : referenced_cells_) {
         cell_provider_(pos)->cells_dependent_on_this_cell_.erase(position);
     }
-    //заменяем прямые зависимости на новые 
+   
     auto referenced_cells = impl_->GetReferencedCells();
     referenced_cells_ = {referenced_cells.begin(), referenced_cells.end()};
     
-    //создаем пустые ячейки, если в формуле есть еще не существующие. Добавляем им текущую ячейку в обратные зависимости
     for (auto pos : referenced_cells_) {
         if (cell_provider_(pos) == nullptr) {
             sheet_->SetCell(pos, "");
