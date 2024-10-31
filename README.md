@@ -59,4 +59,4 @@ The project is designed with extensibility in mind. Future enhancements may incl
 - Improving error handling and reporting
   
 ## License
-This project is licensed under the terms of the [MIT License](https://github.com/Daria-Chepurnaia/cpp-spreadsheet/blob/main/LICENSE).
+This project is licensed under the terms of the [Mit License](https://github.com/Daria-Chepurnaia/cpp-spreadsheet/blob/main/LICENSE.txt) 
